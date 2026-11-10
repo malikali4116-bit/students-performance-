@@ -1,0 +1,384 @@
+{% extends 'base.html' %}
+
+{% block title %}Attendance Management{% endblock %}
+{% block page_title %}Attendance Management System{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+  <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+    <div>
+      <h2 class="h4 fw-bold text-dark mb-1">Class Attendance Tracker</h2>
+      <p class="text-muted small mb-0">Record and monitor student classroom attendance and institutional compliance.</p>
+    </div>
+  </div>
+
+  <div class="row g-4 mb-4">
+    <!-- Attendance Entry Form Card -->
+    <div class="col-lg-5">
+      <div class="card h-100">
+        <div class="card-header bg-white border-bottom py-3">
+          <h3 class="h6 fw-bold mb-0 text-dark">
+            <i class="fa-solid fa-calendar-plus text-primary me-2"></i>Record / Update Attendance
+          </h3>
+          <span class="text-muted small">Select student and log session attendance</span>
+        </div>
+        <div class="card-body p-4">
+          <form id="attendanceForm" onsubmit="submitAttendance(event)">
+            <!-- Student Selection -->
+            <div class="mb-3">
+              <label class="form-label small fw-bold text-dark">Select Student <span class="text-danger">*</span></label>
+              <select id="att_student_id" class="form-select" required onchange="onStudentSelectChange()">
+                <option value="">-- Choose Student --</option>
+              </select>
+            </div>
+
+            <!-- Total Working Days -->
+            <div class="mb-3">
+              <label class="form-label small fw-bold text-dark">Total Working Days <span class="text-danger">*</span></label>
+              <input type="number" id="att_total_days" class="form-control" min="1" max="300" value="90" required oninput="calculateAttendancePct()">
+              <div class="form-text">Standard semester working days (e.g., 90 or 100).</div>
+            </div>
+
+            <!-- Days Attended -->
+            <div class="mb-3">
+              <label class="form-label small fw-bold text-dark">Days Attended <span class="text-danger">*</span></label>
+              <input type="number" id="att_days_attended" class="form-control" min="0" max="300" value="80" required oninput="calculateAttendancePct()">
+            </div>
+
+            <!-- Auto-Calculated Attendance Result Card -->
+            <div class="p-3 bg-light rounded-3 border mb-4">
+              <div class="d-flex justify-content-between align-items-center mb-1">
+                <span class="small fw-semibold text-muted">Calculated Attendance:</span>
+                <span class="h5 fw-bold mb-0 text-primary" id="calculatedPctDisplay">88.9%</span>
+              </div>
+              <div class="custom-progress mb-2" style="height: 10px;">
+                <div id="calculatedProgressBar" class="progress-bar bg-success" style="width: 88.9%;"></div>
+              </div>
+              <div class="small" id="calculatedStatusText">
+                <i class="fa-solid fa-circle-check text-success me-1"></i> Eligible for examinations (Threshold >= 75%)
+              </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100 d-flex align-items-center justify-content-center gap-2 py-2" id="saveAttBtn">
+              <i class="fa-solid fa-floppy-disk"></i>
+              <span>Save Attendance Record</span>
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Attendance Policy & Info Card -->
+    <div class="col-lg-7">
+      <div class="card h-100">
+        <div class="card-header bg-white border-bottom py-3">
+          <h3 class="h6 fw-bold mb-0 text-dark">
+            <i class="fa-solid fa-circle-info text-info me-2"></i>Institutional Attendance Benchmarks
+          </h3>
+          <span class="text-muted small">Standard regulation guidelines and predictive feature impact</span>
+        </div>
+        <div class="card-body p-4">
+          <div class="row g-3 mb-4">
+            <div class="col-md-4">
+              <div class="p-3 border rounded-3 bg-success bg-opacity-10 text-success">
+                <div class="fw-bold fs-6 mb-1">&gt; 85% Attendance</div>
+                <div class="small">Optimal engagement tier. Maximizes student retention and internal grade correlation.</div>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="p-3 border rounded-3 bg-warning bg-opacity-10 text-warning">
+                <div class="fw-bold fs-6 mb-1">75% - 85% Attendance</div>
+                <div class="small">Standard statutory requirement. Eligible for terminal university examinations.</div>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="p-3 border rounded-3 bg-danger bg-opacity-10 text-danger">
+                <div class="fw-bold fs-6 mb-1">&lt; 75% Attendance</div>
+                <div class="small">Critical risk status. Subject to condonation fees or examination detention.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="alert alert-primary d-flex align-items-start gap-3 mb-0" role="alert">
+            <i class="fa-solid fa-robot fa-2x mt-1 text-primary"></i>
+            <div>
+              <div class="fw-bold">Machine Learning Impact:</div>
+              <div class="small">
+                In our trained Multiple Linear Regression model, Attendance contributes directly to the final score with a positive model weight. Regular classroom presence correlates strongly with higher internal and final semester examination marks.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Attendance Records Table -->
+  <div class="card mb-4">
+    <div class="card-header bg-white border-bottom py-3 d-flex flex-wrap align-items-center justify-content-between gap-2">
+      <div>
+        <h3 class="h6 fw-bold mb-0 text-dark">
+          <i class="fa-solid fa-list-check text-primary me-2"></i>Student Attendance Roster
+        </h3>
+        <span class="text-muted small">Latest attendance logs and visual percentage bars</span>
+      </div>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-hover table-custom align-middle mb-0">
+        <thead>
+          <tr>
+            <th>Student ID</th>
+            <th>Name</th>
+            <th>Department</th>
+            <th>Days Attended / Total</th>
+            <th>Attendance Rate</th>
+            <th>Status</th>
+            <th>Last Updated</th>
+            <th class="text-end">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="attendance-table-body">
+          <tr>
+            <td colspan="8" class="text-center py-4 text-muted">
+              <div class="spinner-border spinner-border-sm text-primary me-2"></div>
+              Loading attendance records...
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Attendance History Modal -->
+<div class="modal fade" id="historyModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title fw-bold"><i class="fa-solid fa-clock-rotate-left me-2"></i>Attendance Log History</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body p-4">
+        <div id="historyStudentHeader" class="mb-3 pb-2 border-bottom fw-bold text-dark"></div>
+        <div class="table-responsive">
+          <table class="table table-sm table-striped">
+            <thead>
+              <tr>
+                <th>Date Logged</th>
+                <th>Working Days</th>
+                <th>Attended</th>
+                <th>Percentage</th>
+              </tr>
+            </thead>
+            <tbody id="historyTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer bg-light">
+        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let studentsList = [];
+
+async function loadInitialData() {
+  await loadStudentsDropdown();
+  await loadAttendanceTable();
+  calculateAttendancePct();
+}
+
+async function loadStudentsDropdown() {
+  try {
+    const res = await fetch('/api/students');
+    studentsList = await res.json();
+    const select = document.getElementById('att_student_id');
+    select.innerHTML = '<option value="">-- Choose Student --</option>';
+
+    studentsList.forEach(s => {
+      select.insertAdjacentHTML('beforeend', `<option value="${s.id}">${s.student_id} - ${s.name} (${s.department})</option>`);
+    });
+  } catch (err) {
+    console.error(err);
+    showToast('Failed to load students for dropdown', 'error');
+  }
+}
+
+async function loadAttendanceTable() {
+  try {
+    const res = await fetch('/api/attendance');
+    const records = await res.json();
+    const tbody = document.getElementById('attendance-table-body');
+    tbody.innerHTML = '';
+
+    if (records.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="8" class="text-center py-4 text-muted">No attendance records found.</td></tr>`;
+      return;
+    }
+
+    records.forEach(r => {
+      const p = parseFloat(r.attendance_percentage);
+      let statusBadge = '<span class="badge bg-success">Eligible</span>';
+      if (p < 75) statusBadge = '<span class="badge bg-danger">Low Attendance</span>';
+      else if (p < 85) statusBadge = '<span class="badge bg-warning text-dark">Moderate</span>';
+
+      const row = `
+        <tr>
+          <td class="fw-bold text-primary">${r.code}</td>
+          <td><div class="fw-bold">${r.name}</div></td>
+          <td><span class="badge bg-light text-dark border">${r.department}</span></td>
+          <td>${r.days_attended} / ${r.total_working_days} days</td>
+          <td style="min-width: 170px;">${getAttendanceProgressBar(p)}</td>
+          <td>${statusBadge}</td>
+          <td class="small text-muted">${r.updated_at}</td>
+          <td class="text-end">
+            <button class="btn btn-sm btn-outline-primary me-1" onclick="selectForEdit(${r.student_id}, ${r.total_working_days}, ${r.days_attended})" title="Edit Attendance">
+              <i class="fa-solid fa-pen-to-square"></i>
+            </button>
+            <button class="btn btn-sm btn-outline-secondary" onclick="viewHistory(${r.student_id}, '${r.name.replace("'", "\\'")}')" title="View History">
+              <i class="fa-solid fa-history"></i>
+            </button>
+          </td>
+        </tr>
+      `;
+      tbody.insertAdjacentHTML('beforeend', row);
+    });
+  } catch (err) {
+    console.error(err);
+    showToast('Failed to load attendance records', 'error');
+  }
+}
+
+function calculateAttendancePct() {
+  const total = parseFloat(document.getElementById('att_total_days').value) || 0;
+  const attended = parseFloat(document.getElementById('att_days_attended').value) || 0;
+  const display = document.getElementById('calculatedPctDisplay');
+  const bar = document.getElementById('calculatedProgressBar');
+  const status = document.getElementById('calculatedStatusText');
+
+  if (total <= 0) {
+    display.textContent = '0.0%';
+    bar.style.width = '0%';
+    status.innerHTML = '<span class="text-danger"><i class="fa-solid fa-circle-exclamation me-1"></i> Working days must be > 0</span>';
+    return;
+  }
+
+  if (attended > total) {
+    display.textContent = 'Invalid';
+    bar.style.width = '100%';
+    bar.className = 'progress-bar bg-danger';
+    status.innerHTML = '<span class="text-danger fw-bold"><i class="fa-solid fa-triangle-exclamation me-1"></i> Attended days cannot exceed total working days!</span>';
+    return;
+  }
+
+  const pct = Math.min(100, Math.max(0, (attended / total) * 100));
+  display.textContent = pct.toFixed(1) + '%';
+  bar.style.width = pct + '%';
+
+  if (pct >= 85) {
+    bar.className = 'progress-bar bg-success';
+    status.innerHTML = '<i class="fa-solid fa-circle-check text-success me-1"></i> <strong>Excellent Attendance:</strong> Eligible with high standing.';
+  } else if (pct >= 75) {
+    bar.className = 'progress-bar bg-primary';
+    status.innerHTML = '<i class="fa-solid fa-circle-info text-primary me-1"></i> <strong>Satisfactory Attendance:</strong> Eligible for final exams.';
+  } else {
+    bar.className = 'progress-bar bg-danger';
+    status.innerHTML = '<i class="fa-solid fa-triangle-exclamation text-danger me-1"></i> <strong class="text-danger">Warning:</strong> Below 75% threshold! Immediate attention required.';
+  }
+}
+
+function onStudentSelectChange() {
+  const select = document.getElementById('att_student_id');
+  const studentId = parseInt(select.value);
+  if (!studentId) return;
+
+  const s = studentsList.find(item => item.id === studentId);
+  if (s && s.attendance) {
+    document.getElementById('att_total_days').value = s.attendance.total_working_days;
+    document.getElementById('att_days_attended').value = s.attendance.days_attended;
+    calculateAttendancePct();
+  }
+}
+
+function selectForEdit(studentId, total, attended) {
+  document.getElementById('att_student_id').value = studentId;
+  document.getElementById('att_total_days').value = total;
+  document.getElementById('att_days_attended').value = attended;
+  calculateAttendancePct();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+async function submitAttendance(e) {
+  e.preventDefault();
+  const studentId = parseInt(document.getElementById('att_student_id').value);
+  const total = parseInt(document.getElementById('att_total_days').value);
+  const attended = parseInt(document.getElementById('att_days_attended').value);
+
+  if (!studentId) {
+    showToast('Please select a student.', 'warning');
+    return;
+  }
+  if (attended > total) {
+    showToast('Attended days cannot exceed total working days.', 'error');
+    return;
+  }
+
+  const payload = {
+    student_id: studentId,
+    total_working_days: total,
+    days_attended: attended
+  };
+
+  try {
+    const res = await fetch('/api/attendance', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to save attendance');
+
+    showToast(data.message, 'success');
+    await loadStudentsDropdown();
+    await loadAttendanceTable();
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+
+async function viewHistory(studentId, studentName) {
+  try {
+    const res = await fetch(`/api/attendance/${studentId}`);
+    const history = await res.json();
+    document.getElementById('historyStudentHeader').textContent = `Attendance Log: ${studentName}`;
+    const tbody = document.getElementById('historyTableBody');
+    tbody.innerHTML = '';
+
+    if (history.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="4" class="text-center py-3 text-muted">No logs recorded yet.</td></tr>`;
+    } else {
+      history.forEach(h => {
+        tbody.insertAdjacentHTML('beforeend', `
+          <tr>
+            <td>${h.created_at || 'N/A'}</td>
+            <td>${h.total_working_days}</td>
+            <td>${h.days_attended}</td>
+            <td><strong>${h.attendance_percentage}%</strong></td>
+          </tr>
+        `);
+      });
+    }
+
+    new bootstrap.Modal(document.getElementById('historyModal')).show();
+  } catch (err) {
+    showToast('Failed to load attendance history', 'error');
+  }
+}
+
+document.addEventListener('DOMContentLoaded', loadInitialData);
+</script>
+{% endblock %}

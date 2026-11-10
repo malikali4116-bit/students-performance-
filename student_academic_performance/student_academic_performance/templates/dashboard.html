@@ -1,0 +1,485 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard Overview{% endblock %}
+{% block page_title %}Academic Performance Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+  <!-- Header Banner -->
+  <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+    <div>
+      <h2 class="h4 fw-bold text-dark mb-1">Institutional Overview & Predictive Diagnostics</h2>
+      <p class="text-muted small mb-0">Real-time academic telemetry and Machine Learning predictive insights powered by Multiple Linear Regression.</p>
+    </div>
+    <div class="d-flex gap-2">
+      <a href="{{ url_for('prediction_page') }}" class="btn btn-primary d-flex align-items-center gap-2 shadow-sm">
+        <i class="fa-solid fa-brain"></i>
+        <span>Run ML Prediction</span>
+      </a>
+      <a href="{{ url_for('students_page') }}" class="btn btn-outline-secondary d-flex align-items-center gap-2">
+        <i class="fa-solid fa-user-plus"></i>
+        <span>Manage Students</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- 7 KPI Statistics Cards -->
+  <div class="row g-3 mb-4">
+    <!-- 1. Total Students -->
+    <div class="col-xl-3 col-md-6 col-sm-6">
+      <div class="stat-card stat-primary">
+        <div class="d-flex align-items-center justify-content-between">
+          <div>
+            <div class="stat-label">Total Students</div>
+            <div class="stat-value" id="kpi-total-students">--</div>
+            <div class="stat-sub text-primary"><i class="fa-solid fa-users"></i> Enrolled Cohort</div>
+          </div>
+          <div class="stat-icon-wrapper">
+            <i class="fa-solid fa-user-graduate"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. Avg Attendance -->
+    <div class="col-xl-3 col-md-6 col-sm-6">
+      <div class="stat-card stat-success">
+        <div class="d-flex align-items-center justify-content-between">
+          <div>
+            <div class="stat-label">Avg Attendance</div>
+            <div class="stat-value" id="kpi-avg-attendance">--%</div>
+            <div class="stat-sub text-success"><i class="fa-solid fa-calendar-check"></i> Class Presence</div>
+          </div>
+          <div class="stat-icon-wrapper">
+            <i class="fa-solid fa-clipboard-user"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. Avg Assignment Marks -->
+    <div class="col-xl-3 col-md-6 col-sm-6">
+      <div class="stat-card stat-info">
+        <div class="d-flex align-items-center justify-content-between">
+          <div>
+            <div class="stat-label">Avg Assignment Marks</div>
+            <div class="stat-value" id="kpi-avg-assignment">--</div>
+            <div class="stat-sub text-info"><i class="fa-solid fa-tasks"></i> Scale: 0 - 100</div>
+          </div>
+          <div class="stat-icon-wrapper">
+            <i class="fa-solid fa-pen-ruler"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. Avg Internal Assessment -->
+    <div class="col-xl-3 col-md-6 col-sm-6">
+      <div class="stat-card stat-purple">
+        <div class="d-flex align-items-center justify-content-between">
+          <div>
+            <div class="stat-label">Avg Internal Marks</div>
+            <div class="stat-value" id="kpi-avg-internal">--</div>
+            <div class="stat-sub text-purple"><i class="fa-solid fa-file-signature"></i> Continuous Eval</div>
+          </div>
+          <div class="stat-icon-wrapper">
+            <i class="fa-solid fa-clipboard-check"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5. Avg Predicted Final Marks -->
+    <div class="col-xl-4 col-md-6 col-sm-6">
+      <div class="stat-card stat-indigo">
+        <div class="d-flex align-items-center justify-content-between">
+          <div>
+            <div class="stat-label">Avg Predicted Final Marks</div>
+            <div class="stat-value" id="kpi-avg-predicted">--</div>
+            <div class="stat-sub text-indigo"><i class="fa-solid fa-brain"></i> ML Linear Regression</div>
+          </div>
+          <div class="stat-icon-wrapper">
+            <i class="fa-solid fa-chart-line"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 6. Performing Well -->
+    <div class="col-xl-4 col-md-6 col-sm-6">
+      <div class="stat-card stat-success">
+        <div class="d-flex align-items-center justify-content-between">
+          <div>
+            <div class="stat-label">Performing Well</div>
+            <div class="stat-value text-success" id="kpi-performing-well">--</div>
+            <div class="stat-sub text-success"><i class="fa-solid fa-arrow-trend-up"></i> Score ≥ 60.0%</div>
+          </div>
+          <div class="stat-icon-wrapper">
+            <i class="fa-solid fa-circle-check"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 7. Needing Improvement -->
+    <div class="col-xl-4 col-md-12 col-sm-12">
+      <div class="stat-card stat-danger">
+        <div class="d-flex align-items-center justify-content-between">
+          <div>
+            <div class="stat-label">Needing Improvement</div>
+            <div class="stat-value text-danger" id="kpi-needing-improvement">--</div>
+            <div class="stat-sub text-danger"><i class="fa-solid fa-triangle-exclamation"></i> Critical Risk &lt; 60.0%</div>
+          </div>
+          <div class="stat-icon-wrapper">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Charts Row 1: Performance Overview & Attendance Distribution -->
+  <div class="row g-4 mb-4">
+    <!-- Chart 1: Student Performance Overview – Bar chart -->
+    <div class="col-lg-8">
+      <div class="card h-100">
+        <div class="card-header bg-white border-bottom py-3 d-flex align-items-center justify-content-between">
+          <div>
+            <h3 class="h6 fw-bold mb-0 text-dark">
+              <i class="fa-solid fa-chart-column text-primary me-2"></i>Student Performance Overview
+            </h3>
+            <span class="text-muted small">Comparison of predicted final marks across cohort students</span>
+          </div>
+          <span class="badge bg-light text-dark border">Bar Chart</span>
+        </div>
+        <div class="card-body">
+          <div style="height: 300px; position: relative;">
+            <canvas id="overviewBarChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chart 2: Attendance Distribution – Doughnut chart -->
+    <div class="col-lg-4">
+      <div class="card h-100">
+        <div class="card-header bg-white border-bottom py-3 d-flex align-items-center justify-content-between">
+          <div>
+            <h3 class="h6 fw-bold mb-0 text-dark">
+              <i class="fa-solid fa-chart-pie text-success me-2"></i>Attendance Distribution
+            </h3>
+            <span class="text-muted small">Institutional attendance threshold compliance</span>
+          </div>
+          <span class="badge bg-light text-dark border">Doughnut</span>
+        </div>
+        <div class="card-body d-flex flex-column align-items-center justify-content-center">
+          <div style="height: 260px; width: 100%; position: relative;">
+            <canvas id="attendanceDoughnutChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Charts Row 2: Actual vs Predicted Marks & Performance Categories -->
+  <div class="row g-4 mb-4">
+    <!-- Chart 3: Actual vs Predicted Marks – Line chart -->
+    <div class="col-lg-7">
+      <div class="card h-100">
+        <div class="card-header bg-white border-bottom py-3 d-flex align-items-center justify-content-between">
+          <div>
+            <h3 class="h6 fw-bold mb-0 text-dark">
+              <i class="fa-solid fa-chart-line text-indigo me-2"></i>Actual vs Predicted Marks
+            </h3>
+            <span class="text-muted small">Model prediction fidelity comparison for evaluated students</span>
+          </div>
+          <span class="badge bg-light text-dark border">Line Chart</span>
+        </div>
+        <div class="card-body">
+          <div style="height: 290px; position: relative;">
+            <canvas id="actualVsPredLineChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chart 4: Performance Categories – Pie chart -->
+    <div class="col-lg-5">
+      <div class="card h-100">
+        <div class="card-header bg-white border-bottom py-3 d-flex align-items-center justify-content-between">
+          <div>
+            <h3 class="h6 fw-bold mb-0 text-dark">
+              <i class="fa-solid fa-chart-pie text-warning me-2"></i>Performance Categories
+            </h3>
+            <span class="text-muted small">Tiers: Excellent, Very Good, Good, Average, Needs Improvement</span>
+          </div>
+          <span class="badge bg-light text-dark border">Pie Chart</span>
+        </div>
+        <div class="card-body d-flex flex-column align-items-center justify-content-center">
+          <div style="height: 260px; width: 100%; position: relative;">
+            <canvas id="categoriesPieChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent Student Activity Table -->
+  <div class="card mb-4">
+    <div class="card-header bg-white border-bottom py-3 d-flex flex-wrap align-items-center justify-content-between gap-2">
+      <div>
+        <h3 class="h6 fw-bold mb-0 text-dark">
+          <i class="fa-solid fa-clock-rotate-left text-primary me-2"></i>Recent Student Academic Activity
+        </h3>
+        <span class="text-muted small">Real-time synchronization with SQLite database records</span>
+      </div>
+      <div class="d-flex gap-2">
+        <a href="{{ url_for('students_page') }}" class="btn btn-sm btn-outline-primary">
+          View All Students <i class="fa-solid fa-arrow-right ms-1"></i>
+        </a>
+      </div>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-hover table-custom align-middle mb-0">
+        <thead>
+          <tr>
+            <th>Student ID</th>
+            <th>Student Name</th>
+            <th>Attendance</th>
+            <th>Assignment Marks</th>
+            <th>Internal Marks</th>
+            <th>Predicted Final Marks</th>
+            <th>Actual Final Marks</th>
+            <th>Performance Category</th>
+            <th class="text-end">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="recent-activity-tbody">
+          <tr>
+            <td colspan="9" class="text-center py-4 text-muted">
+              <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
+              Loading dynamic student activity from SQLite database...
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let overviewChartInstance = null;
+let attendanceChartInstance = null;
+let actualVsPredChartInstance = null;
+let categoriesChartInstance = null;
+
+async function loadDashboardData() {
+  try {
+    const res = await fetch('/api/dashboard/stats');
+    if (!res.ok) throw new Error('Failed to load dashboard metrics');
+    const data = await res.json();
+
+    // 1. Update KPI Cards
+    document.getElementById('kpi-total-students').textContent = data.total_students;
+    document.getElementById('kpi-avg-attendance').textContent = data.avg_attendance + '%';
+    document.getElementById('kpi-avg-assignment').textContent = data.avg_assignment;
+    document.getElementById('kpi-avg-internal').textContent = data.avg_internal;
+    document.getElementById('kpi-avg-predicted').textContent = data.avg_predicted;
+    document.getElementById('kpi-performing-well').textContent = data.performing_well;
+    document.getElementById('kpi-needing-improvement').textContent = data.needing_improvement;
+
+    // 2. Render Activity Table
+    const tbody = document.getElementById('recent-activity-tbody');
+    tbody.innerHTML = '';
+
+    if (!data.recent_activity || data.recent_activity.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="9" class="text-center py-4 text-muted">No student records found.</td></tr>`;
+    } else {
+      data.recent_activity.forEach(item => {
+        const badge = getCategoryBadge(item.category);
+        const actualBadge = item.actual_final !== 'Pending' 
+          ? `<span class="badge bg-light text-dark border fw-bold">${item.actual_final}</span>`
+          : `<span class="badge bg-light text-muted border">Pending</span>`;
+
+        const row = `
+          <tr>
+            <td class="fw-semibold text-primary">${item.student_id}</td>
+            <td>
+              <div class="fw-bold">${item.name}</div>
+            </td>
+            <td>${item.attendance}</td>
+            <td><span class="badge bg-light text-dark border">${item.assignment_marks}</span></td>
+            <td><span class="badge bg-light text-dark border">${item.internal_marks}</span></td>
+            <td>
+              <span class="fw-bold text-primary">${item.predicted_final}</span>
+            </td>
+            <td>${actualBadge}</td>
+            <td>${badge}</td>
+            <td class="text-end">
+              <a href="/performance?student_id=${item.id}" class="btn btn-sm btn-outline-info me-1" title="View Analysis">
+                <i class="fa-solid fa-chart-line"></i>
+              </a>
+              <a href="/recommendations?student_id=${item.id}" class="btn btn-sm btn-outline-primary" title="Recommendations">
+                <i class="fa-solid fa-lightbulb"></i>
+              </a>
+            </td>
+          </tr>
+        `;
+        tbody.insertAdjacentHTML('beforeend', row);
+      });
+    }
+
+    // 3. Render Chart 1: Student Performance Overview (Bar chart)
+    const ctxBar = document.getElementById('overviewBarChart').getContext('2d');
+    if (overviewChartInstance) overviewChartInstance.destroy();
+    overviewChartInstance = new Chart(ctxBar, {
+      type: 'bar',
+      data: {
+        labels: data.charts.performance_overview.labels,
+        datasets: [
+          {
+            label: 'Predicted Final Marks',
+            data: data.charts.performance_overview.predicted,
+            backgroundColor: 'rgba(37, 99, 235, 0.85)',
+            borderColor: '#2563eb',
+            borderWidth: 1,
+            borderRadius: 6
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'top' },
+          tooltip: {
+            callbacks: {
+              label: (context) => ` Predicted: ${context.parsed.y} / 100`
+            }
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            max: 100,
+            ticks: { stepSize: 20 }
+          }
+        }
+      }
+    });
+
+    // 4. Render Chart 2: Attendance Distribution (Doughnut chart)
+    const ctxDoughnut = document.getElementById('attendanceDoughnutChart').getContext('2d');
+    if (attendanceChartInstance) attendanceChartInstance.destroy();
+    attendanceChartInstance = new Chart(ctxDoughnut, {
+      type: 'doughnut',
+      data: {
+        labels: data.charts.attendance_distribution.labels,
+        datasets: [{
+          data: data.charts.attendance_distribution.counts,
+          backgroundColor: ['#ef4444', '#f59e0b', '#10b981'],
+          borderWidth: 2,
+          borderColor: '#ffffff'
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'bottom' }
+        },
+        cutout: '65%'
+      }
+    });
+
+    // 5. Render Chart 3: Actual vs Predicted Marks (Line chart)
+    const ctxLine = document.getElementById('actualVsPredLineChart').getContext('2d');
+    if (actualVsPredChartInstance) actualVsPredChartInstance.destroy();
+    actualVsPredChartInstance = new Chart(ctxLine, {
+      type: 'line',
+      data: {
+        labels: data.charts.actual_vs_predicted.labels,
+        datasets: [
+          {
+            label: 'Actual Final Marks',
+            data: data.charts.actual_vs_predicted.actual,
+            borderColor: '#10b981',
+            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+            fill: true,
+            tension: 0.3,
+            borderWidth: 2,
+            pointRadius: 4
+          },
+          {
+            label: 'Predicted Final Marks',
+            data: data.charts.actual_vs_predicted.predicted,
+            borderColor: '#3b82f6',
+            backgroundColor: 'transparent',
+            borderDash: [5, 5],
+            borderWidth: 2,
+            tension: 0.3,
+            pointRadius: 4
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'top' },
+          tooltip: {
+            callbacks: {
+              label: (context) => ` ${context.dataset.label}: ${context.parsed.y} / 100`
+            }
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: false,
+            min: 30,
+            max: 100
+          }
+        }
+      }
+    });
+
+    // 6. Render Chart 4: Performance Categories (Pie chart)
+    const ctxPie = document.getElementById('categoriesPieChart').getContext('2d');
+    if (categoriesChartInstance) categoriesChartInstance.destroy();
+    categoriesChartInstance = new Chart(ctxPie, {
+      type: 'pie',
+      data: {
+        labels: data.charts.performance_categories.labels,
+        datasets: [{
+          data: data.charts.performance_categories.counts,
+          backgroundColor: [
+            '#10b981', // Excellent
+            '#3b82f6', // Very Good
+            '#06b6d4', // Good
+            '#f59e0b', // Average
+            '#ef4444'  // Needs Improvement
+          ],
+          borderWidth: 2,
+          borderColor: '#ffffff'
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } }
+        }
+      }
+    });
+
+  } catch (err) {
+    console.error('Error fetching dashboard stats:', err);
+    showToast('Failed to load dashboard metrics. Check backend connection.', 'error');
+  }
+}
+
+document.addEventListener('DOMContentLoaded', loadDashboardData);
+</script>
+{% endblock %}

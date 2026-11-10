@@ -1,0 +1,327 @@
+{% extends 'base.html' %}
+
+{% block title %}Academic Records{% endblock %}
+{% block page_title %}Academic Records Management{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+  <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+    <div>
+      <h2 class="h4 fw-bold text-dark mb-1">Academic Performance Records</h2>
+      <p class="text-muted small mb-0">Record and manage continuous internal assessments, study commitments, assignment grades, and final exam marks.</p>
+    </div>
+  </div>
+
+  <div class="row g-4 mb-4">
+    <!-- Academic Entry Form -->
+    <div class="col-lg-5">
+      <div class="card h-100">
+        <div class="card-header bg-white border-bottom py-3">
+          <h3 class="h6 fw-bold mb-0 text-dark">
+            <i class="fa-solid fa-pen-to-square text-primary me-2"></i>Log Academic Metrics
+          </h3>
+          <span class="text-muted small">Update student performance variables</span>
+        </div>
+        <div class="card-body p-4">
+          <form id="academicForm" onsubmit="submitAcademicRecord(event)">
+            <!-- Select Student -->
+            <div class="mb-3">
+              <label class="form-label small fw-bold text-dark">Select Student <span class="text-danger">*</span></label>
+              <select id="acad_student_id" class="form-select" required onchange="onStudentSelectChange()">
+                <option value="">-- Choose Student --</option>
+              </select>
+            </div>
+
+            <!-- Daily Study Hours -->
+            <div class="mb-3">
+              <div class="d-flex justify-content-between align-items-center mb-1">
+                <label class="form-label small fw-bold text-dark mb-0">Daily Study Hours (0 - 12 hrs) <span class="text-danger">*</span></label>
+                <span class="badge bg-light text-primary border" id="studyHoursValue">4.0 hrs</span>
+              </div>
+              <input type="range" class="form-range" id="acad_study_hours" min="0" max="12" step="0.5" value="4.0" oninput="updateStudyHoursLabel(this.value)">
+              <div class="d-flex justify-content-between small text-muted">
+                <span>0 hrs</span>
+                <span>6 hrs</span>
+                <span>12 hrs</span>
+              </div>
+            </div>
+
+            <!-- Assignment Marks -->
+            <div class="mb-3">
+              <label class="form-label small fw-bold text-dark">Assignment Marks (0 - 100) <span class="text-danger">*</span></label>
+              <input type="number" id="acad_assignment_marks" class="form-control" min="0" max="100" step="0.1" value="75.0" required>
+            </div>
+
+            <!-- Internal Assessment Marks -->
+            <div class="mb-3">
+              <label class="form-label small fw-bold text-dark">Internal Assessment Marks (0 - 100) <span class="text-danger">*</span></label>
+              <input type="number" id="acad_internal_marks" class="form-control" min="0" max="100" step="0.1" value="78.0" required>
+            </div>
+
+            <!-- Previous Semester Marks -->
+            <div class="mb-3">
+              <label class="form-label small fw-bold text-dark">Previous Semester Marks (0 - 100) <span class="text-danger">*</span></label>
+              <input type="number" id="acad_previous_sem" class="form-control" min="0" max="100" step="0.1" value="72.0" required>
+            </div>
+
+            <!-- Actual Final Examination Marks (Optional) -->
+            <div class="mb-4 p-3 bg-light rounded-3 border">
+              <div class="d-flex align-items-center justify-content-between mb-1">
+                <label class="form-label small fw-bold text-dark mb-0">Actual Final Exam Marks (Optional)</label>
+                <span class="badge bg-secondary">Faculty Entered</span>
+              </div>
+              <input type="number" id="acad_actual_final" class="form-control" min="0" max="100" step="0.1" placeholder="Leave blank if not yet conducted">
+              <div class="form-text">Actual marks are recorded separately and are only entered after official university results are declared.</div>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100 py-2 d-flex align-items-center justify-content-center gap-2" id="saveAcadBtn">
+              <i class="fa-solid fa-floppy-disk"></i>
+              <span>Save Academic Record</span>
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Feature Description / Guidelines Card -->
+    <div class="col-lg-7">
+      <div class="card h-100">
+        <div class="card-header bg-white border-bottom py-3">
+          <h3 class="h6 fw-bold mb-0 text-dark">
+            <i class="fa-solid fa-sliders text-primary me-2"></i>Predictive Feature Calibration
+          </h3>
+          <span class="text-muted small">Understanding academic variables used by Multiple Linear Regression</span>
+        </div>
+        <div class="card-body p-4">
+          <div class="table-responsive mb-3">
+            <table class="table table-bordered align-middle">
+              <thead class="table-light">
+                <tr>
+                  <th>Academic Variable</th>
+                  <th>Range</th>
+                  <th>Educational Impact</th>
+                </tr>
+              </thead>
+              <tbody class="small">
+                <tr>
+                  <td class="fw-bold">Daily Study Hours</td>
+                  <td>0 - 12 hrs</td>
+                  <td>Self-study intensity outside scheduled classes. Reinforces conceptual assimilation and active recall.</td>
+                </tr>
+                <tr>
+                  <td class="fw-bold">Assignment Marks</td>
+                  <td>0 - 100</td>
+                  <td>Continuous course homework, problem sets, and mini-project submission scores.</td>
+                </tr>
+                <tr>
+                  <td class="fw-bold">Internal Assessment</td>
+                  <td>0 - 100</td>
+                  <td>Mid-term exams, periodic unit tests, and laboratory vivas. Strongest leading predictor of final exam performance.</td>
+                </tr>
+                <tr>
+                  <td class="fw-bold">Previous Semester Marks</td>
+                  <td>0 - 100</td>
+                  <td>Historical benchmark representing foundational knowledge and prerequisite subject mastery.</td>
+                </tr>
+                <tr>
+                  <td class="fw-bold text-primary">Actual Final Marks</td>
+                  <td>0 - 100</td>
+                  <td>Official examination score. Maintained separately from AI predictions to maintain scientific integrity.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="p-3 bg-light rounded-3 border">
+            <div class="fw-bold text-dark small mb-1"><i class="fa-solid fa-shield-halved text-success me-1"></i> Data Integrity Guarantee</div>
+            <div class="small text-muted">
+              Actual final marks are strictly faculty-verified. The system never generates fictitious actual marks for existing predictions.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Academic Records Table Card -->
+  <div class="card mb-4">
+    <div class="card-header bg-white border-bottom py-3">
+      <h3 class="h6 fw-bold mb-0 text-dark">
+        <i class="fa-solid fa-table-list text-primary me-2"></i>Academic Records Database
+      </h3>
+      <span class="text-muted small">Current academic telemetry and terminal grades</span>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-hover table-custom align-middle mb-0">
+        <thead>
+          <tr>
+            <th>Student ID</th>
+            <th>Name</th>
+            <th>Department</th>
+            <th>Study Hours</th>
+            <th>Assignments</th>
+            <th>Internal Tests</th>
+            <th>Previous Sem</th>
+            <th>Actual Final Marks</th>
+            <th>Last Updated</th>
+            <th class="text-end">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="academic-table-body">
+          <tr>
+            <td colspan="10" class="text-center py-4 text-muted">
+              <div class="spinner-border spinner-border-sm text-primary me-2"></div>
+              Loading academic records...
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let studentsList = [];
+
+async function loadInitialData() {
+  await loadStudentsDropdown();
+  await loadAcademicTable();
+}
+
+async function loadStudentsDropdown() {
+  try {
+    const res = await fetch('/api/students');
+    studentsList = await res.json();
+    const select = document.getElementById('acad_student_id');
+    select.innerHTML = '<option value="">-- Choose Student --</option>';
+
+    studentsList.forEach(s => {
+      select.insertAdjacentHTML('beforeend', `<option value="${s.id}">${s.student_id} - ${s.name} (${s.department})</option>`);
+    });
+  } catch (err) {
+    console.error(err);
+    showToast('Failed to load students for dropdown', 'error');
+  }
+}
+
+async function loadAcademicTable() {
+  try {
+    const res = await fetch('/api/academic-records');
+    const records = await res.json();
+    const tbody = document.getElementById('academic-table-body');
+    tbody.innerHTML = '';
+
+    if (records.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="10" class="text-center py-4 text-muted">No academic records found.</td></tr>`;
+      return;
+    }
+
+    records.forEach(r => {
+      const actualBadge = r.actual_final_marks !== null
+        ? `<span class="badge bg-success bg-opacity-10 text-success fw-bold border border-success">${r.actual_final_marks} / 100</span>`
+        : `<span class="badge bg-light text-muted border">Pending</span>`;
+
+      const row = `
+        <tr>
+          <td class="fw-bold text-primary">${r.code}</td>
+          <td><div class="fw-bold">${r.name}</div></td>
+          <td><span class="badge bg-light text-dark border">${r.department}</span></td>
+          <td>${r.study_hours} hrs/day</td>
+          <td><span class="badge bg-light text-dark border">${r.assignment_marks}</span></td>
+          <td><span class="badge bg-light text-dark border">${r.internal_marks}</span></td>
+          <td><span class="badge bg-light text-dark border">${r.previous_semester_marks}</span></td>
+          <td>${actualBadge}</td>
+          <td class="small text-muted">${r.updated_at}</td>
+          <td class="text-end">
+            <button class="btn btn-sm btn-outline-primary" onclick="selectForEdit(${r.student_id}, ${r.study_hours}, ${r.assignment_marks}, ${r.internal_marks}, ${r.previous_semester_marks}, ${r.actual_final_marks})" title="Edit Record">
+              <i class="fa-solid fa-pen-to-square"></i>
+            </button>
+          </td>
+        </tr>
+      `;
+      tbody.insertAdjacentHTML('beforeend', row);
+    });
+  } catch (err) {
+    console.error(err);
+    showToast('Failed to load academic records', 'error');
+  }
+}
+
+function updateStudyHoursLabel(val) {
+  document.getElementById('studyHoursValue').textContent = parseFloat(val).toFixed(1) + ' hrs';
+}
+
+function onStudentSelectChange() {
+  const select = document.getElementById('acad_student_id');
+  const studentId = parseInt(select.value);
+  if (!studentId) return;
+
+  const s = studentsList.find(item => item.id === studentId);
+  if (s && s.academic_record) {
+    const a = s.academic_record;
+    document.getElementById('acad_study_hours').value = a.study_hours;
+    updateStudyHoursLabel(a.study_hours);
+    document.getElementById('acad_assignment_marks').value = a.assignment_marks;
+    document.getElementById('acad_internal_marks').value = a.internal_marks;
+    document.getElementById('acad_previous_sem').value = a.previous_semester_marks;
+    document.getElementById('acad_actual_final').value = a.actual_final_marks !== null ? a.actual_final_marks : '';
+  }
+}
+
+function selectForEdit(studentId, hours, assign, internal, prev, actual) {
+  document.getElementById('acad_student_id').value = studentId;
+  document.getElementById('acad_study_hours').value = hours;
+  updateStudyHoursLabel(hours);
+  document.getElementById('acad_assignment_marks').value = assign;
+  document.getElementById('acad_internal_marks').value = internal;
+  document.getElementById('acad_previous_sem').value = prev;
+  document.getElementById('acad_actual_final').value = (actual !== null && actual !== undefined) ? actual : '';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+async function submitAcademicRecord(e) {
+  e.preventDefault();
+  const studentId = parseInt(document.getElementById('acad_student_id').value);
+  const studyHours = parseFloat(document.getElementById('acad_study_hours').value);
+  const assignmentMarks = parseFloat(document.getElementById('acad_assignment_marks').value);
+  const internalMarks = parseFloat(document.getElementById('acad_internal_marks').value);
+  const previousSem = parseFloat(document.getElementById('acad_previous_sem').value);
+  const actualVal = document.getElementById('acad_actual_final').value.trim();
+  const actualFinalMarks = actualVal !== '' ? parseFloat(actualVal) : null;
+
+  if (!studentId) {
+    showToast('Please select a student.', 'warning');
+    return;
+  }
+
+  const payload = {
+    student_id: studentId,
+    study_hours: studyHours,
+    assignment_marks: assignmentMarks,
+    internal_marks: internalMarks,
+    previous_semester_marks: previousSem,
+    actual_final_marks: actualFinalMarks
+  };
+
+  try {
+    const res = await fetch('/api/academic-records', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to save academic record');
+
+    showToast(data.message, 'success');
+    await loadStudentsDropdown();
+    await loadAcademicTable();
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+
+document.addEventListener('DOMContentLoaded', loadInitialData);
+</script>
+{% endblock %}

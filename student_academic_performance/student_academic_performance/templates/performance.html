@@ -1,0 +1,421 @@
+{% extends 'base.html' %}
+
+{% block title %}Performance Analysis{% endblock %}
+{% block page_title %}Academic Performance Analytics{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+  <!-- Top Selector Bar -->
+  <div class="card mb-4">
+    <div class="card-body p-3">
+      <div class="row g-3 align-items-center">
+        <div class="col-md-6">
+          <label class="form-label small fw-bold text-dark mb-1">
+            <i class="fa-solid fa-user-graduate text-primary me-1"></i> Select Student for Individual Analytics:
+          </label>
+          <select id="analysisStudentSelect" class="form-select" onchange="loadStudentPerformanceAnalytics()">
+            <option value="">-- Choose Student --</option>
+          </select>
+        </div>
+        <div class="col-md-6 text-md-end">
+          <span class="badge bg-light text-primary border px-3 py-2">
+            <i class="fa-solid fa-chart-line me-1"></i> Multi-Dimensional Comparative Analytics
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Student Key Metrics KPI Strip -->
+  <div class="row g-3 mb-4" id="studentMetricsStrip">
+    <div class="col-xl-2 col-md-4 col-sm-6">
+      <div class="stat-card stat-primary">
+        <div class="stat-label">Attendance Rate</div>
+        <div class="stat-value fs-5" id="s-stat-att">--%</div>
+        <div class="stat-sub text-primary"><i class="fa-solid fa-calendar-check"></i> Recorded Presence</div>
+      </div>
+    </div>
+    <div class="col-xl-2 col-md-4 col-sm-6">
+      <div class="stat-card stat-info">
+        <div class="stat-label">Daily Study</div>
+        <div class="stat-value fs-5" id="s-stat-study">-- hrs</div>
+        <div class="stat-sub text-info"><i class="fa-solid fa-clock"></i> Self-Study Time</div>
+      </div>
+    </div>
+    <div class="col-xl-2 col-md-4 col-sm-6">
+      <div class="stat-card stat-purple">
+        <div class="stat-label">Assignments</div>
+        <div class="stat-value fs-5" id="s-stat-assign">-- / 100</div>
+        <div class="stat-sub text-purple"><i class="fa-solid fa-pen-ruler"></i> Coursework</div>
+      </div>
+    </div>
+    <div class="col-xl-2 col-md-4 col-sm-6">
+      <div class="stat-card stat-indigo">
+        <div class="stat-label">Internal Tests</div>
+        <div class="stat-value fs-5" id="s-stat-internal">-- / 100</div>
+        <div class="stat-sub text-indigo"><i class="fa-solid fa-file-lines"></i> Continuous Eval</div>
+      </div>
+    </div>
+    <div class="col-xl-2 col-md-4 col-sm-6">
+      <div class="stat-card stat-success">
+        <div class="stat-label">Predicted Final</div>
+        <div class="stat-value fs-5 text-primary" id="s-stat-pred">--</div>
+        <div class="stat-sub text-success" id="s-stat-cat">Category: --</div>
+      </div>
+    </div>
+    <div class="col-xl-2 col-md-4 col-sm-6">
+      <div class="stat-card stat-warning">
+        <div class="stat-label">Actual Final Marks</div>
+        <div class="stat-value fs-5" id="s-stat-actual">Pending</div>
+        <div class="stat-sub text-muted" id="s-stat-actual-status"><i class="fa-solid fa-user-pen"></i> Official Faculty Log</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Charts Row 1: Radar (Academic Performance Comparison) & Actual vs Predicted Bar Chart -->
+  <div class="row g-4 mb-4">
+    <!-- Chart 1: Academic Performance Comparison – Radar chart -->
+    <div class="col-lg-6">
+      <div class="card h-100">
+        <div class="card-header bg-white border-bottom py-3 d-flex align-items-center justify-content-between">
+          <div>
+            <h3 class="h6 fw-bold mb-0 text-dark">
+              <i class="fa-solid fa-spider text-primary me-2"></i>Academic Performance Comparison
+            </h3>
+            <span class="text-muted small">Student metrics vs Institutional Class Averages</span>
+          </div>
+          <span class="badge bg-light text-dark border">Radar Chart</span>
+        </div>
+        <div class="card-body d-flex align-items-center justify-content-center">
+          <div style="height: 330px; width: 100%; position: relative;">
+            <canvas id="performanceRadarChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chart 2: Actual vs Predicted Marks – Bar chart -->
+    <div class="col-lg-6">
+      <div class="card h-100">
+        <div class="card-header bg-white border-bottom py-3 d-flex align-items-center justify-content-between">
+          <div>
+            <h3 class="h6 fw-bold mb-0 text-dark">
+              <i class="fa-solid fa-chart-column text-indigo me-2"></i>Actual vs Predicted Marks
+            </h3>
+            <span class="text-muted small">Comparison of ML prediction against officially entered grade</span>
+          </div>
+          <span class="badge bg-light text-dark border">Bar Chart</span>
+        </div>
+        <div class="card-body">
+          <div id="actualMarksNotice" class="alert alert-info py-2 small mb-3" style="display: none;">
+            <i class="fa-solid fa-circle-info me-1"></i> Actual final examination marks have not yet been entered for this student.
+          </div>
+          <div style="height: 290px; position: relative;">
+            <canvas id="actualVsPredBarChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Charts Row 2: Student Performance History & Attendance vs Final Marks Scatter -->
+  <div class="row g-4 mb-4">
+    <!-- Chart 3: Student Performance History – Line chart -->
+    <div class="col-lg-6">
+      <div class="card h-100">
+        <div class="card-header bg-white border-bottom py-3 d-flex align-items-center justify-content-between">
+          <div>
+            <h3 class="h6 fw-bold mb-0 text-dark">
+              <i class="fa-solid fa-chart-line text-success me-2"></i>Student Performance History
+            </h3>
+            <span class="text-muted small">Progression across continuous evaluations</span>
+          </div>
+          <span class="badge bg-light text-dark border">Line Chart</span>
+        </div>
+        <div class="card-body">
+          <div style="height: 300px; position: relative;">
+            <canvas id="performanceHistoryLineChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chart 4: Attendance vs Final Marks – Scatter chart -->
+    <div class="col-lg-6">
+      <div class="card h-100">
+        <div class="card-header bg-white border-bottom py-3 d-flex align-items-center justify-content-between">
+          <div>
+            <h3 class="h6 fw-bold mb-0 text-dark">
+              <i class="fa-solid fa-braille text-primary me-2"></i>Attendance vs Final Marks
+            </h3>
+            <span class="text-muted small">Cohort correlation scatter plot (Attendance % vs Marks)</span>
+          </div>
+          <span class="badge bg-light text-dark border">Scatter Chart</span>
+        </div>
+        <div class="card-body">
+          <div style="height: 300px; position: relative;">
+            <canvas id="attendanceScatterChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let radarChartInstance = null;
+let barChartInstance = null;
+let lineChartInstance = null;
+let scatterChartInstance = null;
+
+async function initPerformancePage() {
+  await loadStudentsDropdown();
+  await loadScatterChart();
+
+  const params = new URLSearchParams(window.location.search);
+  const studentId = params.get('student_id');
+  if (studentId) {
+    document.getElementById('analysisStudentSelect').value = studentId;
+  } else {
+    // Select first student by default
+    const firstOption = document.querySelector('#analysisStudentSelect option:nth-child(2)');
+    if (firstOption) document.getElementById('analysisStudentSelect').value = firstOption.value;
+  }
+  loadStudentPerformanceAnalytics();
+}
+
+async function loadStudentsDropdown() {
+  try {
+    const res = await fetch('/api/students');
+    const students = await res.json();
+    const select = document.getElementById('analysisStudentSelect');
+    select.innerHTML = '<option value="">-- Choose Student --</option>';
+
+    students.forEach(s => {
+      select.insertAdjacentHTML('beforeend', `<option value="${s.id}">${s.student_id} - ${s.name} (${s.department})</option>`);
+    });
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+async function loadStudentPerformanceAnalytics() {
+  const studentId = document.getElementById('analysisStudentSelect').value;
+  if (!studentId) return;
+
+  try {
+    const res = await fetch(`/api/performance/${studentId}`);
+    if (!res.ok) throw new Error('Failed to load performance analytics');
+    const data = await res.json();
+
+    const s = data.student;
+    const att = s.attendance;
+    const acad = s.academic_record;
+    const pred = s.prediction;
+
+    // Update Strip
+    document.getElementById('s-stat-att').textContent = att ? att.attendance_percentage + '%' : 'N/A';
+    document.getElementById('s-stat-study').textContent = acad ? acad.study_hours + ' hrs' : 'N/A';
+    document.getElementById('s-stat-assign').textContent = acad ? acad.assignment_marks : 'N/A';
+    document.getElementById('s-stat-internal').textContent = acad ? acad.internal_marks : 'N/A';
+    document.getElementById('s-stat-pred').textContent = pred ? pred.predicted_marks.toFixed(2) : 'Pending';
+    document.getElementById('s-stat-cat').textContent = pred ? pred.performance_category : 'Uncategorized';
+
+    const actualEl = document.getElementById('s-stat-actual');
+    if (data.has_actual_marks) {
+      actualEl.textContent = `${data.actual_final_marks.toFixed(2)} / 100`;
+      actualEl.className = 'stat-value fs-5 text-success fw-bold';
+      document.getElementById('actualMarksNotice').style.display = 'none';
+    } else {
+      actualEl.textContent = 'Not Entered';
+      actualEl.className = 'stat-value fs-5 text-muted';
+      document.getElementById('actualMarksNotice').style.display = 'block';
+    }
+
+    // Chart 1: Radar Chart (Academic Performance Comparison)
+    const ctxRadar = document.getElementById('performanceRadarChart').getContext('2d');
+    if (radarChartInstance) radarChartInstance.destroy();
+    radarChartInstance = new Chart(ctxRadar, {
+      type: 'radar',
+      data: {
+        labels: data.radar.labels,
+        datasets: [
+          {
+            label: s.name,
+            data: data.radar.student_scores,
+            backgroundColor: 'rgba(37, 99, 235, 0.2)',
+            borderColor: '#2563eb',
+            borderWidth: 2,
+            pointBackgroundColor: '#2563eb',
+            pointRadius: 4
+          },
+          {
+            label: 'Class Average',
+            data: data.radar.class_averages,
+            backgroundColor: 'rgba(148, 163, 184, 0.2)',
+            borderColor: '#94a3b8',
+            borderWidth: 2,
+            pointBackgroundColor: '#94a3b8',
+            borderDash: [4, 4],
+            pointRadius: 3
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          r: {
+            suggestedMin: 0,
+            suggestedMax: 100,
+            ticks: { stepSize: 20 }
+          }
+        }
+      }
+    });
+
+    // Chart 2: Actual vs Predicted Bar Chart
+    const ctxBar = document.getElementById('actualVsPredBarChart').getContext('2d');
+    if (barChartInstance) barChartInstance.destroy();
+
+    const barDatasets = [
+      {
+        label: 'Predicted Final Marks',
+        data: data.comparison_bar.predicted,
+        backgroundColor: '#3b82f6',
+        borderRadius: 6
+      }
+    ];
+
+    if (data.has_actual_marks) {
+      barDatasets.unshift({
+        label: 'Actual Final Marks (Faculty Logged)',
+        data: data.comparison_bar.actual,
+        backgroundColor: '#10b981',
+        borderRadius: 6
+      });
+    }
+
+    barChartInstance = new Chart(ctxBar, {
+      type: 'bar',
+      data: {
+        labels: ['Final Examination Performance'],
+        datasets: barDatasets
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: {
+            beginAtZero: true,
+            max: 100
+          }
+        }
+      }
+    });
+
+    // Chart 3: Student Performance History Line Chart
+    const ctxLine = document.getElementById('performanceHistoryLineChart').getContext('2d');
+    if (lineChartInstance) lineChartInstance.destroy();
+    lineChartInstance = new Chart(ctxLine, {
+      type: 'line',
+      data: {
+        labels: data.history.labels,
+        datasets: [
+          {
+            label: 'Assignment Marks',
+            data: data.history.assignment,
+            borderColor: '#0284c7',
+            backgroundColor: 'transparent',
+            tension: 0.3,
+            borderWidth: 2,
+            pointRadius: 4
+          },
+          {
+            label: 'Internal Assessment',
+            data: data.history.internal,
+            borderColor: '#7c3aed',
+            backgroundColor: 'transparent',
+            tension: 0.3,
+            borderWidth: 2,
+            pointRadius: 4
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: {
+            suggestedMin: 30,
+            suggestedMax: 100
+          }
+        }
+      }
+    });
+
+  } catch (err) {
+    console.error(err);
+    showToast('Failed to load student performance analysis', 'error');
+  }
+}
+
+// Chart 4: Attendance vs Final Marks Scatter Chart
+async function loadScatterChart() {
+  try {
+    const res = await fetch('/api/performance/scatter');
+    const points = await res.json();
+
+    const ctxScatter = document.getElementById('attendanceScatterChart').getContext('2d');
+    if (scatterChartInstance) scatterChartInstance.destroy();
+
+    scatterChartInstance = new Chart(ctxScatter, {
+      type: 'scatter',
+      data: {
+        datasets: [{
+          label: 'Student Cohort',
+          data: points.map(p => ({ x: p.x, y: p.y, name: p.name, id: p.id, type: p.type })),
+          backgroundColor: points.map(p => p.type === 'Actual' ? '#10b981' : '#3b82f6'),
+          borderColor: '#ffffff',
+          borderWidth: 1,
+          pointRadius: 6,
+          pointHoverRadius: 8
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          tooltip: {
+            callbacks: {
+              label: (context) => {
+                const pt = context.raw;
+                return ` ${pt.name} (${pt.id}): Att: ${pt.x}%, Mark: ${pt.y} (${pt.type})`;
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            title: { display: true, text: 'Attendance Percentage (%)' },
+            min: 40,
+            max: 100
+          },
+          y: {
+            title: { display: true, text: 'Final Examination Marks' },
+            min: 20,
+            max: 100
+          }
+        }
+      }
+    });
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+document.addEventListener('DOMContentLoaded', initPerformancePage);
+</script>
+{% endblock %}

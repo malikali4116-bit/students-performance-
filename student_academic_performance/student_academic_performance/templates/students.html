@@ -1,0 +1,500 @@
+{% extends 'base.html' %}
+
+{% block title %}Student Management{% endblock %}
+{% block page_title %}Student Management System{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+  <!-- Top Action Bar -->
+  <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+    <div>
+      <h2 class="h4 fw-bold text-dark mb-1">Enrolled Students Roster</h2>
+      <p class="text-muted small mb-0">Manage registered students, view academic snapshots, and perform cohort administration.</p>
+    </div>
+    <div>
+      <button class="btn btn-primary d-flex align-items-center gap-2 shadow-sm" data-bs-toggle="modal" data-bs-target="#addStudentModal" onclick="prepareAddStudentModal()">
+        <i class="fa-solid fa-user-plus"></i>
+        <span>Add New Student</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Filter & Search Controls -->
+  <div class="card mb-4">
+    <div class="card-body p-3">
+      <div class="row g-3 align-items-center">
+        <!-- Search bar -->
+        <div class="col-md-5">
+          <div class="input-group">
+            <span class="input-group-text bg-white border-end-0 text-muted">
+              <i class="fa-solid fa-magnifying-glass"></i>
+            </span>
+            <input type="text" id="searchInput" class="form-control border-start-0" placeholder="Search by name, student ID, or email..." onkeyup="handleSearch(event)">
+          </div>
+        </div>
+
+        <!-- Department Filter -->
+        <div class="col-md-3">
+          <select id="departmentFilter" class="form-select" onchange="fetchStudents()">
+            <option value="">All Departments</option>
+            <option value="Computer Science & Engineering">Computer Science & Engineering</option>
+            <option value="Artificial Intelligence & Data Science">AI & Data Science</option>
+            <option value="Information Technology">Information Technology</option>
+            <option value="Electronics & Communication">Electronics & Communication</option>
+            <option value="Mechanical Engineering">Mechanical Engineering</option>
+          </select>
+        </div>
+
+        <!-- Year Filter -->
+        <div class="col-md-2">
+          <select id="yearFilter" class="form-select" onchange="fetchStudents()">
+            <option value="">All Years</option>
+            <option value="1st Year">1st Year</option>
+            <option value="2nd Year">2nd Year</option>
+            <option value="3rd Year">3rd Year</option>
+            <option value="4th Year">4th Year</option>
+          </select>
+        </div>
+
+        <!-- Clear Filter -->
+        <div class="col-md-2 text-end">
+          <button class="btn btn-outline-secondary w-100" onclick="clearFilters()">
+            <i class="fa-solid fa-arrow-rotate-left me-1"></i> Reset
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Students Table Card -->
+  <div class="card mb-4">
+    <div class="table-responsive">
+      <table class="table table-hover table-custom align-middle mb-0">
+        <thead>
+          <tr>
+            <th>Student ID</th>
+            <th>Name</th>
+            <th>Department</th>
+            <th>Year</th>
+            <th>Email</th>
+            <th>Phone</th>
+            <th>Attendance</th>
+            <th>Predicted Final</th>
+            <th>Category</th>
+            <th class="text-end">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="students-table-body">
+          <tr>
+            <td colspan="10" class="text-center py-5 text-muted">
+              <div class="spinner-border spinner-border-sm text-primary me-2"></div>
+              Loading registered students...
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="card-footer bg-white border-top py-3 d-flex align-items-center justify-content-between">
+      <div class="small text-muted" id="table-record-count">Showing 0 students</div>
+    </div>
+  </div>
+</div>
+
+<!-- Add Student Modal -->
+<div class="modal fade" id="addStudentModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title fw-bold"><i class="fa-solid fa-user-plus me-2"></i>Register New Student</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form id="addStudentForm" onsubmit="submitAddStudent(event)">
+        <div class="modal-body p-4">
+          <div class="mb-3">
+            <label class="form-label small fw-bold text-dark">Student ID (Auto-Generated)</label>
+            <input type="text" id="add_student_id" class="form-control bg-light" required readonly>
+            <div class="form-text">System-assigned unique identification code.</div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-bold text-dark">Full Student Name <span class="text-danger">*</span></label>
+            <input type="text" id="add_name" class="form-control" placeholder="e.g. Diya Patel" required>
+          </div>
+          <div class="row g-3 mb-3">
+            <div class="col-md-7">
+              <label class="form-label small fw-bold text-dark">Department <span class="text-danger">*</span></label>
+              <select id="add_department" class="form-select" required>
+                <option value="">Select Department</option>
+                <option value="Computer Science & Engineering">Computer Science & Engineering</option>
+                <option value="Artificial Intelligence & Data Science">AI & Data Science</option>
+                <option value="Information Technology">Information Technology</option>
+                <option value="Electronics & Communication">Electronics & Communication</option>
+                <option value="Mechanical Engineering">Mechanical Engineering</option>
+              </select>
+            </div>
+            <div class="col-md-5">
+              <label class="form-label small fw-bold text-dark">Year of Study <span class="text-danger">*</span></label>
+              <select id="add_year" class="form-select" required>
+                <option value="1st Year">1st Year</option>
+                <option value="2nd Year">2nd Year</option>
+                <option value="3rd Year" selected>3rd Year</option>
+                <option value="4th Year">4th Year</option>
+              </select>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-bold text-dark">Email Address <span class="text-danger">*</span></label>
+            <input type="email" id="add_email" class="form-control" placeholder="student@campus.edu" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-bold text-dark">Phone Number <span class="text-danger">*</span></label>
+            <input type="tel" id="add_phone" class="form-control" placeholder="+91 98451 00000" required>
+          </div>
+        </div>
+        <div class="modal-footer bg-light">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="saveStudentBtn">
+            <i class="fa-solid fa-save me-1"></i> Register Student
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Student Modal -->
+<div class="modal fade" id="editStudentModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg">
+      <div class="modal-header bg-dark text-white">
+        <h5 class="modal-title fw-bold"><i class="fa-solid fa-user-pen me-2"></i>Edit Student Profile</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form id="editStudentForm" onsubmit="submitEditStudent(event)">
+        <input type="hidden" id="edit_id">
+        <div class="modal-body p-4">
+          <div class="mb-3">
+            <label class="form-label small fw-bold text-dark">Student ID</label>
+            <input type="text" id="edit_student_id" class="form-control bg-light" readonly>
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-bold text-dark">Full Student Name <span class="text-danger">*</span></label>
+            <input type="text" id="edit_name" class="form-control" required>
+          </div>
+          <div class="row g-3 mb-3">
+            <div class="col-md-7">
+              <label class="form-label small fw-bold text-dark">Department <span class="text-danger">*</span></label>
+              <select id="edit_department" class="form-select" required>
+                <option value="Computer Science & Engineering">Computer Science & Engineering</option>
+                <option value="Artificial Intelligence & Data Science">AI & Data Science</option>
+                <option value="Information Technology">Information Technology</option>
+                <option value="Electronics & Communication">Electronics & Communication</option>
+                <option value="Mechanical Engineering">Mechanical Engineering</option>
+              </select>
+            </div>
+            <div class="col-md-5">
+              <label class="form-label small fw-bold text-dark">Year of Study <span class="text-danger">*</span></label>
+              <select id="edit_year" class="form-select" required>
+                <option value="1st Year">1st Year</option>
+                <option value="2nd Year">2nd Year</option>
+                <option value="3rd Year">3rd Year</option>
+                <option value="4th Year">4th Year</option>
+              </select>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-bold text-dark">Email Address <span class="text-danger">*</span></label>
+            <input type="email" id="edit_email" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-bold text-dark">Phone Number <span class="text-danger">*</span></label>
+            <input type="tel" id="edit_phone" class="form-control" required>
+          </div>
+        </div>
+        <div class="modal-footer bg-light">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="updateStudentBtn">
+            <i class="fa-solid fa-save me-1"></i> Update Changes
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Student Profile Quick View Modal -->
+<div class="modal fade" id="profileViewModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content border-0 shadow-lg">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title fw-bold"><i class="fa-solid fa-id-card me-2"></i>Student Academic Profile Snapshot</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body p-4" id="profileViewBody">
+        <!-- Injected dynamically -->
+      </div>
+      <div class="modal-footer bg-light justify-content-between">
+        <div id="profileFooterLinks"></div>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-sm">
+    <div class="modal-content border-0 shadow-lg">
+      <div class="modal-body text-center p-4">
+        <div class="text-danger mb-3">
+          <i class="fa-solid fa-triangle-exclamation fa-3x"></i>
+        </div>
+        <h5 class="fw-bold mb-2">Delete Student?</h5>
+        <p class="text-muted small mb-3">Are you sure you want to delete <strong id="deleteStudentName"></strong>? All associated attendance, academic records, and predictions will also be removed permanently.</p>
+        <input type="hidden" id="deleteStudentId">
+        <div class="d-flex gap-2 justify-content-center">
+          <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-danger" onclick="confirmDeleteStudent()">Delete Permanently</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let allStudentsData = [];
+let searchTimeout = null;
+
+async function fetchStudents() {
+  const query = document.getElementById('searchInput').value.trim();
+  const dept = document.getElementById('departmentFilter').value;
+  const year = document.getElementById('yearFilter').value;
+
+  const url = new URL('/api/students', window.location.origin);
+  if (query) url.searchParams.set('q', query);
+  if (dept) url.searchParams.set('department', dept);
+  if (year) url.searchParams.set('year', year);
+
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('Failed to load students');
+    allStudentsData = await res.json();
+    renderStudentsTable(allStudentsData);
+  } catch (err) {
+    console.error(err);
+    showToast('Failed to load student list', 'error');
+  }
+}
+
+function renderStudentsTable(students) {
+  const tbody = document.getElementById('students-table-body');
+  const countEl = document.getElementById('table-record-count');
+  tbody.innerHTML = '';
+  countEl.textContent = `Showing ${students.length} student${students.length === 1 ? '' : 's'}`;
+
+  if (students.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="10" class="text-center py-5 text-muted">No students matching the criteria.</td></tr>`;
+    return;
+  }
+
+  students.forEach(s => {
+    const att = s.attendance;
+    const acad = s.academic_record;
+    const pred = s.prediction;
+
+    const attBar = att ? getAttendanceProgressBar(att.attendance_percentage) : '<span class="text-muted">None</span>';
+    const predMarks = pred ? `<span class="fw-bold text-primary">${pred.predicted_marks.toFixed(2)}</span>` : '<span class="text-muted">N/A</span>';
+    const catBadge = pred ? getCategoryBadge(pred.performance_category) : '<span class="badge bg-light text-muted border">None</span>';
+
+    const row = `
+      <tr>
+        <td class="fw-bold text-primary">${s.student_id}</td>
+        <td>
+          <div class="fw-bold">${s.name}</div>
+        </td>
+        <td><span class="badge bg-light text-dark border">${s.department}</span></td>
+        <td>${s.year}</td>
+        <td><a href="mailto:${s.email}" class="text-decoration-none small text-muted">${s.email}</a></td>
+        <td><span class="small text-muted">${s.phone}</span></td>
+        <td style="min-width: 140px;">${attBar}</td>
+        <td>${predMarks}</td>
+        <td>${catBadge}</td>
+        <td class="text-end text-nowrap">
+          <button class="btn btn-sm btn-outline-secondary me-1" title="View Profile" onclick="openProfileModal(${s.id})">
+            <i class="fa-solid fa-eye"></i>
+          </button>
+          <button class="btn btn-sm btn-outline-primary me-1" title="Edit Student" onclick="openEditModal(${s.id})">
+            <i class="fa-solid fa-pen-to-square"></i>
+          </button>
+          <button class="btn btn-sm btn-outline-danger" title="Delete Student" onclick="openDeleteModal(${s.id}, '${s.name.replace("'", "\\'")}')">
+            <i class="fa-solid fa-trash"></i>
+          </button>
+        </td>
+      </tr>
+    `;
+    tbody.insertAdjacentHTML('beforeend', row);
+  });
+}
+
+function handleSearch(e) {
+  clearTimeout(searchTimeout);
+  searchTimeout = setTimeout(fetchStudents, 300);
+}
+
+function clearFilters() {
+  document.getElementById('searchInput').value = '';
+  document.getElementById('departmentFilter').value = '';
+  document.getElementById('yearFilter').value = '';
+  fetchStudents();
+}
+
+async function prepareAddStudentModal() {
+  try {
+    const res = await fetch('/api/students/next-id');
+    const data = await res.json();
+    document.getElementById('add_student_id').value = data.next_id;
+  } catch (e) {
+    document.getElementById('add_student_id').value = 'STU-2026-000';
+  }
+}
+
+async function submitAddStudent(e) {
+  e.preventDefault();
+  const payload = {
+    student_id: document.getElementById('add_student_id').value.trim(),
+    name: document.getElementById('add_name').value.trim(),
+    department: document.getElementById('add_department').value,
+    year: document.getElementById('add_year').value,
+    email: document.getElementById('add_email').value.trim(),
+    phone: document.getElementById('add_phone').value.trim()
+  };
+
+  try {
+    const res = await fetch('/api/students', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to add student');
+
+    showToast('Student registered successfully!', 'success');
+    bootstrap.Modal.getInstance(document.getElementById('addStudentModal')).hide();
+    document.getElementById('addStudentForm').reset();
+    fetchStudents();
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+
+function openEditModal(studentId) {
+  const s = allStudentsData.find(item => item.id === studentId);
+  if (!s) return;
+
+  document.getElementById('edit_id').value = s.id;
+  document.getElementById('edit_student_id').value = s.student_id;
+  document.getElementById('edit_name').value = s.name;
+  document.getElementById('edit_department').value = s.department;
+  document.getElementById('edit_year').value = s.year;
+  document.getElementById('edit_email').value = s.email;
+  document.getElementById('edit_phone').value = s.phone;
+
+  new bootstrap.Modal(document.getElementById('editStudentModal')).show();
+}
+
+async function submitEditStudent(e) {
+  e.preventDefault();
+  const id = document.getElementById('edit_id').value;
+  const payload = {
+    name: document.getElementById('edit_name').value.trim(),
+    department: document.getElementById('edit_department').value,
+    year: document.getElementById('edit_year').value,
+    email: document.getElementById('edit_email').value.trim(),
+    phone: document.getElementById('edit_phone').value.trim()
+  };
+
+  try {
+    const res = await fetch(`/api/students/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to update student');
+
+    showToast('Student information updated successfully!', 'success');
+    bootstrap.Modal.getInstance(document.getElementById('editStudentModal')).hide();
+    fetchStudents();
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+
+function openDeleteModal(id, name) {
+  document.getElementById('deleteStudentId').value = id;
+  document.getElementById('deleteStudentName').textContent = name;
+  new bootstrap.Modal(document.getElementById('deleteConfirmModal')).show();
+}
+
+async function confirmDeleteStudent() {
+  const id = document.getElementById('deleteStudentId').value;
+  try {
+    const res = await fetch(`/api/students/${id}`, { method: 'DELETE' });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to delete student');
+
+    showToast(data.message, 'success');
+    bootstrap.Modal.getInstance(document.getElementById('deleteConfirmModal')).hide();
+    fetchStudents();
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+
+function openProfileModal(id) {
+  const s = allStudentsData.find(item => item.id === id);
+  if (!s) return;
+
+  const att = s.attendance;
+  const acad = s.academic_record;
+  const pred = s.prediction;
+
+  const bodyEl = document.getElementById('profileViewBody');
+  bodyEl.innerHTML = `
+    <div class="row g-3 mb-4">
+      <div class="col-md-6">
+        <h6 class="fw-bold text-dark border-bottom pb-2">Student Information</h6>
+        <p class="mb-1"><strong>ID:</strong> <span class="text-primary fw-bold">${s.student_id}</span></p>
+        <p class="mb-1"><strong>Name:</strong> ${s.name}</p>
+        <p class="mb-1"><strong>Department:</strong> ${s.department}</p>
+        <p class="mb-1"><strong>Year:</strong> ${s.year}</p>
+        <p class="mb-1"><strong>Email:</strong> ${s.email}</p>
+        <p class="mb-1"><strong>Phone:</strong> ${s.phone}</p>
+      </div>
+      <div class="col-md-6">
+        <h6 class="fw-bold text-dark border-bottom pb-2">Academic & ML Summary</h6>
+        <p class="mb-1"><strong>Attendance:</strong> ${att ? att.attendance_percentage + '% (' + att.days_attended + '/' + att.total_working_days + ' days)' : 'No record'}</p>
+        <p class="mb-1"><strong>Daily Study:</strong> ${acad ? acad.study_hours + ' hrs/day' : 'N/A'}</p>
+        <p class="mb-1"><strong>Assignments:</strong> ${acad ? acad.assignment_marks + ' / 100' : 'N/A'}</p>
+        <p class="mb-1"><strong>Internal Tests:</strong> ${acad ? acad.internal_marks + ' / 100' : 'N/A'}</p>
+        <p class="mb-1"><strong>Previous Sem:</strong> ${acad ? acad.previous_semester_marks + ' / 100' : 'N/A'}</p>
+        <p class="mb-1"><strong>Predicted Final:</strong> <span class="fw-bold text-primary">${pred ? pred.predicted_marks.toFixed(2) + ' / 100' : 'Pending'}</span></p>
+        <p class="mb-1"><strong>Category:</strong> ${pred ? getCategoryBadge(pred.performance_category) : 'N/A'}</p>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('profileFooterLinks').innerHTML = `
+    <a href="/prediction?student_id=${s.id}" class="btn btn-outline-primary btn-sm me-1"><i class="fa-solid fa-brain me-1"></i> Predict</a>
+    <a href="/performance?student_id=${s.id}" class="btn btn-outline-info btn-sm me-1"><i class="fa-solid fa-chart-line me-1"></i> Performance</a>
+    <a href="/recommendations?student_id=${s.id}" class="btn btn-outline-success btn-sm me-1"><i class="fa-solid fa-lightbulb me-1"></i> Recommendations</a>
+    <a href="/api/reports/pdf/${s.id}" class="btn btn-outline-danger btn-sm" target="_blank"><i class="fa-solid fa-file-pdf me-1"></i> PDF Report</a>
+  `;
+
+  new bootstrap.Modal(document.getElementById('profileViewModal')).show();
+}
+
+document.addEventListener('DOMContentLoaded', fetchStudents);
+</script>
+{% endblock %}

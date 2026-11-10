@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Dashboard{% endblock %} - Student Academic Performance Prediction & Support System</title>
+  
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Bootstrap 5.3 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  
+  <!-- Font Awesome 6 Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+  
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+<div id="app-wrapper">
+  <!-- Mobile Backdrop -->
+  <div id="sidebarBackdrop" class="sidebar-backdrop"></div>
+
+  <!-- Sidebar Navigation -->
+  <aside id="sidebar">
+    <div class="sidebar-header">
+      <div class="brand-icon">
+        <i class="fa-solid fa-graduation-cap"></i>
+      </div>
+      <div>
+        <div class="brand-title">EduPredict AI</div>
+        <div class="brand-subtitle">Academic Intelligence</div>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-section-title">Core Navigation</div>
+      
+      <a href="{{ url_for('dashboard_page') }}" class="sidebar-link {% if active_page == 'dashboard' %}active{% endif %}">
+        <i class="fa-solid fa-chart-pie"></i>
+        <span>1. Dashboard</span>
+      </a>
+
+      <a href="{{ url_for('students_page') }}" class="sidebar-link {% if active_page == 'students' %}active{% endif %}">
+        <i class="fa-solid fa-user-graduate"></i>
+        <span>2. Student Management</span>
+      </a>
+
+      <a href="{{ url_for('attendance_page') }}" class="sidebar-link {% if active_page == 'attendance' %}active{% endif %}">
+        <i class="fa-solid fa-calendar-check"></i>
+        <span>3. Attendance Management</span>
+      </a>
+
+      <a href="{{ url_for('academic_records_page') }}" class="sidebar-link {% if active_page == 'academic_records' %}active{% endif %}">
+        <i class="fa-solid fa-book-open"></i>
+        <span>4. Academic Records</span>
+      </a>
+
+      <div class="nav-section-title mt-3">Machine Learning</div>
+
+      <a href="{{ url_for('prediction_page') }}" class="sidebar-link {% if active_page == 'prediction' %}active{% endif %}">
+        <i class="fa-solid fa-brain"></i>
+        <span>5. ML Prediction</span>
+      </a>
+
+      <a href="{{ url_for('performance_page') }}" class="sidebar-link {% if active_page == 'performance' %}active{% endif %}">
+        <i class="fa-solid fa-chart-line"></i>
+        <span>6. Performance Analysis</span>
+      </a>
+
+      <a href="{{ url_for('recommendations_page') }}" class="sidebar-link {% if active_page == 'recommendations' %}active{% endif %}">
+        <i class="fa-solid fa-lightbulb"></i>
+        <span>7. Recommendations</span>
+      </a>
+
+      <div class="nav-section-title mt-3">Reports & System</div>
+
+      <a href="{{ url_for('reports_page') }}" class="sidebar-link {% if active_page == 'reports' %}active{% endif %}">
+        <i class="fa-solid fa-file-invoice"></i>
+        <span>8. Reports</span>
+      </a>
+
+      <a href="{{ url_for('settings_page') }}" class="sidebar-link {% if active_page == 'settings' %}active{% endif %}">
+        <i class="fa-solid fa-sliders"></i>
+        <span>9. Settings</span>
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="ml-badge-footer">
+        <div class="d-flex align-items-center gap-1 fw-bold text-white mb-1">
+          <i class="fa-solid fa-microchip text-primary"></i> Scikit-learn Model
+        </div>
+        <div class="text-truncate">Multiple Linear Regression</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Content Wrapper -->
+  <div id="main-content">
+    <!-- Top Navigation Bar -->
+    <header id="top-navbar">
+      <div class="d-flex align-items-center gap-3">
+        <button id="sidebarToggle" class="btn btn-sm btn-outline-secondary d-lg-none" type="button">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+        <div class="page-breadcrumb">
+          <h1 class="page-title">{% block page_title %}Academic Dashboard{% endblock %}</h1>
+        </div>
+      </div>
+
+      <div class="topbar-actions">
+        <!-- Live System Status Badge -->
+        <div class="system-pill d-none d-md-flex">
+          <span class="pulse-dot"></span>
+          <span>ML Engine: Multiple Linear Regression</span>
+        </div>
+
+        <!-- Academic Session Badge -->
+        <span class="badge bg-light text-primary border d-none d-sm-inline-block px-3 py-2 fw-semibold">
+          <i class="fa-regular fa-calendar me-1"></i> AY 2026-27 • Semester II
+        </span>
+
+        <!-- Notifications Dropdown -->
+        <div class="dropdown">
+          <button class="btn btn-light rounded-circle position-relative" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="width: 38px; height: 38px;">
+            <i class="fa-regular fa-bell"></i>
+            <span class="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle"></span>
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end shadow-sm border p-2" style="min-width: 280px;">
+            <li class="dropdown-header fw-bold text-dark">System Notifications</li>
+            <li><hr class="dropdown-divider"></li>
+            <li class="p-2 small">
+              <div class="fw-semibold text-primary"><i class="fa-solid fa-circle-info me-1"></i> Model Active</div>
+              <div class="text-muted">Scikit-learn Multiple Linear Regression initialized with R²: 86%.</div>
+            </li>
+            <li class="p-2 small">
+              <div class="fw-semibold text-success"><i class="fa-solid fa-database me-1"></i> Database Loaded</div>
+              <div class="text-muted">Academic records & student rosters synced with SQLite.</div>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Profile / Faculty Badge -->
+        <div class="user-profile-badge">
+          <div class="user-avatar">
+            <i class="fa-solid fa-user-tie"></i>
+          </div>
+          <div class="d-none d-md-block text-start">
+            <div class="fw-bold leading-tight" style="font-size: 0.82rem;">Academic Faculty</div>
+            <div class="text-muted leading-tight" style="font-size: 0.7rem;">Administrator</div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Page Body Container -->
+    <main class="page-container">
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+</div>
+
+<!-- Toast Container for Notifications -->
+<div id="toast-container" class="toast-container position-fixed top-0 end-0 p-3"></div>
+
+<!-- Bootstrap 5.3 Bundle JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- Custom JS -->
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+
+{% block scripts %}{% endblock %}
+</body>
+</html>

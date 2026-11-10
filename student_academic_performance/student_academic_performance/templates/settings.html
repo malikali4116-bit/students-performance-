@@ -1,0 +1,244 @@
+{% extends 'base.html' %}
+
+{% block title %}System Settings{% endblock %}
+{% block page_title %}System Configuration & ML Settings{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+  <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+    <div>
+      <h2 class="h4 fw-bold text-dark mb-1">System Management & Configuration</h2>
+      <p class="text-muted small mb-0">Manage Machine Learning model retraining, database resets, institutional parameters, and system telemetry.</p>
+    </div>
+  </div>
+
+  <div class="row g-4 mb-4">
+    <!-- Machine Learning Model Settings -->
+    <div class="col-lg-7">
+      <div class="card h-100">
+        <div class="card-header bg-white border-bottom py-3 d-flex align-items-center justify-content-between">
+          <div>
+            <h3 class="h6 fw-bold mb-0 text-dark">
+              <i class="fa-solid fa-microchip text-primary me-2"></i>Machine Learning Model Engine
+            </h3>
+            <span class="text-muted small">Scikit-learn Multiple Linear Regression configuration</span>
+          </div>
+          <button class="btn btn-sm btn-primary d-flex align-items-center gap-1 shadow-sm" id="retrainBtn" onclick="retrainModel()">
+            <i class="fa-solid fa-arrows-rotate"></i>
+            <span>Retrain ML Model</span>
+          </button>
+        </div>
+        <div class="card-body p-4">
+          <!-- Active Metrics -->
+          <div class="row g-3 mb-4 text-center">
+            <div class="col-sm-3 col-6">
+              <div class="p-3 bg-light rounded-3 border">
+                <div class="small text-muted fw-bold text-uppercase">R² Score</div>
+                <div class="h5 fw-bold text-primary mb-0" id="settings-r2">0.8604</div>
+                <div class="small text-muted" id="settings-r2-pct">86.04%</div>
+              </div>
+            </div>
+            <div class="col-sm-3 col-6">
+              <div class="p-3 bg-light rounded-3 border">
+                <div class="small text-muted fw-bold text-uppercase">MAE</div>
+                <div class="h5 fw-bold text-dark mb-0" id="settings-mae">3.1714</div>
+                <div class="small text-muted">Mean Abs Error</div>
+              </div>
+            </div>
+            <div class="col-sm-3 col-6">
+              <div class="p-3 bg-light rounded-3 border">
+                <div class="small text-muted fw-bold text-uppercase">MSE</div>
+                <div class="h5 fw-bold text-dark mb-0" id="settings-mse">16.0244</div>
+                <div class="small text-muted">Mean Sq Error</div>
+              </div>
+            </div>
+            <div class="col-sm-3 col-6">
+              <div class="p-3 bg-light rounded-3 border">
+                <div class="small text-muted fw-bold text-uppercase">Samples</div>
+                <div class="h5 fw-bold text-dark mb-0" id="settings-samples">500</div>
+                <div class="small text-muted">Dataset Rows</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Feature Coefficients Table -->
+          <h6 class="fw-bold text-dark small text-uppercase mb-2">
+            <i class="fa-solid fa-scale-balanced text-primary me-1"></i> Feature Coefficients (Weights):
+          </h6>
+          <div class="table-responsive mb-3">
+            <table class="table table-sm table-bordered align-middle">
+              <thead class="table-light small">
+                <tr>
+                  <th>Feature Variable</th>
+                  <th>Regression Coefficient (β)</th>
+                  <th>Relative Contribution</th>
+                </tr>
+              </thead>
+              <tbody id="coefficientsTableBody" class="small">
+                <tr>
+                  <td>Attendance Percentage</td>
+                  <td><code>+0.1106</code></td>
+                  <td>Positive linear lift per attendance percent</td>
+                </tr>
+                <tr>
+                  <td>Daily Study Hours</td>
+                  <td><code>+1.5742</code></td>
+                  <td>Strong positive boost per daily hour</td>
+                </tr>
+                <tr>
+                  <td>Assignment Marks</td>
+                  <td><code>+0.2504</code></td>
+                  <td>Continuous task quality contribution</td>
+                </tr>
+                <tr>
+                  <td>Internal Assessment Marks</td>
+                  <td><code>+0.3429</code></td>
+                  <td>Highest positive test correlation</td>
+                </tr>
+                <tr>
+                  <td>Previous Semester Marks</td>
+                  <td><code>+0.2364</code></td>
+                  <td>Foundational prerequisite weight</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="small text-muted">
+            <i class="fa-solid fa-circle-info text-info me-1"></i> Intercept: <strong id="settings-intercept">-1.6652</strong>. Model is serialized to <code>ml/model.pkl</code> via Joblib.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Database Management & Session Settings -->
+    <div class="col-lg-5">
+      <div class="card mb-4">
+        <div class="card-header bg-white border-bottom py-3">
+          <h3 class="h6 fw-bold mb-0 text-dark">
+            <i class="fa-solid fa-database text-danger me-2"></i>Database Administration
+          </h3>
+          <span class="text-muted small">Manage SQLite storage and sample datasets</span>
+        </div>
+        <div class="card-body p-4">
+          <p class="small text-muted mb-3">
+            If you need to reset all student records to the original 16 diverse sample profiles with authentic attendance, academic records, and actual marks, click below.
+          </p>
+
+          <button type="button" class="btn btn-outline-danger w-100 d-flex align-items-center justify-content-center gap-2 py-2" data-bs-toggle="modal" data-bs-target="#resetDbModal">
+            <i class="fa-solid fa-trash-arrow-up"></i>
+            <span>Reset Database to Initial Sample Data</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Institutional Session Parameters -->
+      <div class="card">
+        <div class="card-header bg-white border-bottom py-3">
+          <h3 class="h6 fw-bold mb-0 text-dark">
+            <i class="fa-solid fa-sliders text-secondary me-2"></i>Institutional Parameters
+          </h3>
+          <span class="text-muted small">Academic session defaults</span>
+        </div>
+        <div class="card-body p-4">
+          <div class="mb-3">
+            <label class="form-label small fw-bold text-dark">Academic Year</label>
+            <input type="text" class="form-control form-control-sm" value="2026 - 2027" readonly>
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-bold text-dark">Current Term</label>
+            <input type="text" class="form-control form-control-sm" value="Semester II (Even Term)" readonly>
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-bold text-dark">Statutory Attendance Threshold</label>
+            <input type="text" class="form-control form-control-sm" value="75.0% Minimum" readonly>
+          </div>
+          <div class="mb-0">
+            <label class="form-label small fw-bold text-dark">Minimum Passing Final Examination Grade</label>
+            <input type="text" class="form-control form-control-sm" value="40.0 / 100" readonly>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Reset DB Confirmation Modal -->
+<div class="modal fade" id="resetDbModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-sm">
+    <div class="modal-content border-0 shadow-lg">
+      <div class="modal-body text-center p-4">
+        <div class="text-danger mb-3">
+          <i class="fa-solid fa-database fa-3x"></i>
+        </div>
+        <h5 class="fw-bold mb-2">Reset Entire Database?</h5>
+        <p class="text-muted small mb-3">This will replace all current students with the 16 standard sample students, attendance logs, and academic records.</p>
+        <div class="d-flex gap-2 justify-content-center">
+          <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-danger" onclick="confirmResetDatabase()">Reset & Re-Seed</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function loadSettingsMetrics() {
+  try {
+    const res = await fetch('/api/ml/metrics');
+    const data = await res.json();
+    if (data.metrics) {
+      document.getElementById('settings-r2').textContent = data.metrics.r2_score;
+      document.getElementById('settings-r2-pct').textContent = data.metrics.r2_percentage + '% Explained Variance';
+      document.getElementById('settings-mae').textContent = data.metrics.mae;
+      document.getElementById('settings-mse').textContent = data.metrics.mse;
+      document.getElementById('settings-samples').textContent = (data.total_samples || 500) + ' Students';
+    }
+    if (data.intercept !== undefined) {
+      document.getElementById('settings-intercept').textContent = data.intercept.toFixed(4);
+    }
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+async function retrainModel() {
+  const btn = document.getElementById('retrainBtn');
+  const origHtml = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = `<span class="spinner-border spinner-border-sm me-1" role="status"></span> Retraining...`;
+
+  try {
+    const res = await fetch('/api/ml/retrain', { method: 'POST' });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Retraining failed');
+
+    showToast(data.message, 'success');
+    await loadSettingsMetrics();
+  } catch (err) {
+    showToast(err.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = origHtml;
+  }
+}
+
+async function confirmResetDatabase() {
+  try {
+    const res = await fetch('/api/settings/reset-db', { method: 'POST' });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to reset database');
+
+    showToast(data.message, 'success');
+    bootstrap.Modal.getInstance(document.getElementById('resetDbModal')).hide();
+    setTimeout(() => window.location.href = '/dashboard', 1000);
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+
+document.addEventListener('DOMContentLoaded', loadSettingsMetrics);
+</script>
+{% endblock %}

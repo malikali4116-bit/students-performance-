@@ -1,0 +1,237 @@
+{% extends 'base.html' %}
+
+{% block title %}Improvement Recommendations{% endblock %}
+{% block page_title %}Personalized Improvement Recommendations{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+  <!-- Top Selector Card -->
+  <div class="card mb-4">
+    <div class="card-body p-3">
+      <div class="row g-3 align-items-center">
+        <div class="col-md-6">
+          <label class="form-label small fw-bold text-dark mb-1">
+            <i class="fa-solid fa-user-graduate text-primary me-1"></i> Select Student for Academic Guidance:
+          </label>
+          <select id="recStudentSelect" class="form-select" onchange="loadStudentRecommendations()">
+            <option value="">-- Choose Student --</option>
+          </select>
+        </div>
+        <div class="col-md-6 text-md-end">
+          <span class="badge bg-light text-primary border px-3 py-2">
+            <i class="fa-solid fa-wand-magic-sparkles me-1"></i> Adaptive Rule-Based Advisory Engine
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Student Academic Diagnostic Summary Card -->
+  <div class="card mb-4 border-0 shadow-sm" style="background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%); color: #ffffff;">
+    <div class="card-body p-4">
+      <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+        <div>
+          <span class="badge bg-white text-primary fw-bold mb-2 px-3 py-1 text-uppercase" id="rec-student-id">STU-2026-000</span>
+          <h2 class="h4 fw-bold mb-1 text-white" id="rec-student-name">Loading Student...</h2>
+          <p class="text-white text-opacity-75 small mb-0" id="rec-student-dept">Department & Year</p>
+        </div>
+        <div class="d-flex gap-3 text-center">
+          <div class="bg-white bg-opacity-10 border border-white border-opacity-20 rounded-3 px-3 py-2">
+            <div class="text-white text-opacity-75 small">Attendance</div>
+            <div class="fw-bold fs-5 text-white" id="rec-stat-att">--%</div>
+          </div>
+          <div class="bg-white bg-opacity-10 border border-white border-opacity-20 rounded-3 px-3 py-2">
+            <div class="text-white text-opacity-75 small">Predicted Marks</div>
+            <div class="fw-bold fs-5 text-white" id="rec-stat-pred">--</div>
+          </div>
+          <div class="bg-white bg-opacity-10 border border-white border-opacity-20 rounded-3 px-3 py-2">
+            <div class="text-white text-opacity-75 small">Standing</div>
+            <div class="fw-bold fs-6 text-white" id="rec-stat-cat">--</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Diagnostic Findings & Weak Areas -->
+  <div class="row g-4 mb-4">
+    <!-- Overall Narrative -->
+    <div class="col-lg-7">
+      <div class="card h-100">
+        <div class="card-header bg-white border-bottom py-3">
+          <h3 class="h6 fw-bold mb-0 text-dark">
+            <i class="fa-solid fa-stethoscope text-primary me-2"></i>Academic Diagnosis & Evaluation Summary
+          </h3>
+        </div>
+        <div class="card-body p-4">
+          <p class="text-muted leading-relaxed" id="rec-overall-summary">
+            Evaluating student parameters against institutional benchmarks...
+          </p>
+
+          <h6 class="fw-bold text-dark mt-4 mb-2 small text-uppercase">
+            <i class="fa-solid fa-triangle-exclamation text-warning me-1"></i> Identified Weak Academic Areas:
+          </h6>
+          <div class="d-flex flex-wrap gap-2" id="rec-weak-areas-container">
+            <!-- Dynamic tags -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recommended Study Actions Checklist -->
+    <div class="col-lg-5">
+      <div class="card h-100">
+        <div class="card-header bg-white border-bottom py-3">
+          <h3 class="h6 fw-bold mb-0 text-dark">
+            <i class="fa-solid fa-list-check text-success me-2"></i>Recommended Study Actions
+          </h3>
+          <span class="text-muted small">Actionable interventions to boost final marks</span>
+        </div>
+        <div class="card-body p-4" id="rec-action-plan-container">
+          <!-- Dynamic Action Items -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Detailed Domain-Specific Recommendations -->
+  <div class="card mb-4">
+    <div class="card-header bg-white border-bottom py-3 d-flex align-items-center justify-content-between">
+      <h3 class="h6 fw-bold mb-0 text-dark">
+        <i class="fa-solid fa-layer-group text-primary me-2"></i>Domain-Specific Academic Guidance
+      </h3>
+      <span class="badge bg-light text-muted border">Dynamic Conditioning</span>
+    </div>
+    <div class="card-body p-4" id="rec-domain-cards-container">
+      <!-- Dynamic Domain Recommendation Cards -->
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let studentsList = [];
+
+async function initRecommendationsPage() {
+  await loadStudentsDropdown();
+
+  const params = new URLSearchParams(window.location.search);
+  const studentId = params.get('student_id');
+  if (studentId) {
+    document.getElementById('recStudentSelect').value = studentId;
+  } else {
+    const firstOpt = document.querySelector('#recStudentSelect option:nth-child(2)');
+    if (firstOpt) document.getElementById('recStudentSelect').value = firstOpt.value;
+  }
+  loadStudentRecommendations();
+}
+
+async function loadStudentsDropdown() {
+  try {
+    const res = await fetch('/api/students');
+    studentsList = await res.json();
+    const select = document.getElementById('recStudentSelect');
+    select.innerHTML = '<option value="">-- Choose Student --</option>';
+
+    studentsList.forEach(s => {
+      select.insertAdjacentHTML('beforeend', `<option value="${s.id}">${s.student_id} - ${s.name} (${s.department})</option>`);
+    });
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+async function loadStudentRecommendations() {
+  const studentId = document.getElementById('recStudentSelect').value;
+  if (!studentId) return;
+
+  try {
+    const res = await fetch(`/api/recommendations/${studentId}`);
+    if (!res.ok) throw new Error('Failed to load student recommendations');
+    const data = await res.json();
+
+    const s = data.student;
+    const diag = data.diagnosis;
+
+    // Header strip
+    document.getElementById('rec-student-id').textContent = s.student_id;
+    document.getElementById('rec-student-name').textContent = s.name;
+    document.getElementById('rec-student-dept').textContent = `${s.department} • ${s.year} • ${s.email}`;
+    document.getElementById('rec-stat-att').textContent = data.inputs.attendance_percentage.toFixed(1) + '%';
+    document.getElementById('rec-stat-pred').textContent = data.predicted_marks.toFixed(2) + ' / 100';
+    document.getElementById('rec-stat-cat').textContent = data.category_info.category;
+
+    // Overall summary
+    document.getElementById('rec-overall-summary').textContent = diag.summary;
+
+    // Weak areas
+    const weakContainer = document.getElementById('rec-weak-areas-container');
+    weakContainer.innerHTML = '';
+    diag.weak_areas.forEach(w => {
+      const isClean = w.includes('None identified');
+      const bgClass = isClean ? 'bg-success bg-opacity-10 text-success border-success' : 'bg-danger bg-opacity-10 text-danger border-danger';
+      const icon = isClean ? 'fa-circle-check' : 'fa-triangle-exclamation';
+      weakContainer.insertAdjacentHTML('beforeend', `
+        <span class="badge border ${bgClass} py-2 px-3 fw-semibold">
+          <i class="fa-solid ${icon} me-1"></i> ${w}
+        </span>
+      `);
+    });
+
+    // Action plan checklist
+    const actionContainer = document.getElementById('rec-action-plan-container');
+    actionContainer.innerHTML = '';
+    diag.action_plan.forEach((item, idx) => {
+      actionContainer.insertAdjacentHTML('beforeend', `
+        <div class="action-item">
+          <div class="action-item-icon">${idx + 1}</div>
+          <div class="small fw-medium">${item}</div>
+        </div>
+      `);
+    });
+
+    // Domain-Specific Cards
+    const domainContainer = document.getElementById('rec-domain-cards-container');
+    domainContainer.innerHTML = '';
+
+    diag.recommendations.forEach(r => {
+      let icon = 'fa-book-open';
+      if (r.area.includes('Attendance')) icon = 'fa-calendar-check';
+      else if (r.area.includes('Study')) icon = 'fa-clock';
+      else if (r.area.includes('Assignment')) icon = 'fa-pen-ruler';
+      else if (r.area.includes('Internal')) icon = 'fa-file-lines';
+      else if (r.area.includes('Foundational')) icon = 'fa-graduation-cap';
+
+      const sevClass = `sev-${r.severity}`;
+      const sevBadge = r.severity === 'high' 
+        ? '<span class="badge bg-danger">Critical Priority</span>'
+        : r.severity === 'medium'
+        ? '<span class="badge bg-warning text-dark">Moderate Priority</span>'
+        : '<span class="badge bg-success">On Track</span>';
+
+      domainContainer.insertAdjacentHTML('beforeend', `
+        <div class="recommendation-card ${sevClass}">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <h5 class="h6 fw-bold mb-0 text-dark">
+              <i class="fa-solid ${icon} text-primary me-2"></i>${r.area}
+            </h5>
+            ${sevBadge}
+          </div>
+          <p class="small text-muted mb-2">${r.message}</p>
+          <div class="small fw-semibold text-primary">
+            <i class="fa-solid fa-bullseye me-1"></i> Target Milestone: ${r.target}
+          </div>
+        </div>
+      `);
+    });
+
+  } catch (err) {
+    console.error(err);
+    showToast('Failed to load student recommendations', 'error');
+  }
+}
+
+document.addEventListener('DOMContentLoaded', initRecommendationsPage);
+</script>
+{% endblock %}

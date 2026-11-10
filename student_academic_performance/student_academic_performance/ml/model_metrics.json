@@ -1,0 +1,29 @@
+{
+    "algorithm": "Multiple Linear Regression",
+    "framework": "Scikit-learn",
+    "total_samples": 500,
+    "train_samples": 400,
+    "test_samples": 100,
+    "features": [
+        "attendance_percentage",
+        "study_hours",
+        "assignment_marks",
+        "internal_marks",
+        "previous_semester_marks"
+    ],
+    "coefficients": {
+        "attendance_percentage": 0.11063145534536224,
+        "study_hours": 1.5741776802179102,
+        "assignment_marks": 0.2503822397486066,
+        "internal_marks": 0.34287535471982106,
+        "previous_semester_marks": 0.23638237632129488
+    },
+    "intercept": -1.6652036979803881,
+    "metrics": {
+        "mae": 3.1714,
+        "mse": 16.0244,
+        "rmse": 4.003,
+        "r2_score": 0.8604,
+        "r2_percentage": 86.04
+    }
+}
